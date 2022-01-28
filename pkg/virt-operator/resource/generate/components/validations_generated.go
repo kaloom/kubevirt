@@ -4975,6 +4975,20 @@ var CRDsValidation map[string]string = map[string]string{
                     description: Network represents a network type and a resource
                       that should be connected to the vm.
                     properties:
+                      kactus:
+                        description: Represents the kactus cni network.
+                        properties:
+                          default:
+                            description: Select the default network and add it to
+                              the network annotation.
+                            type: boolean
+                          networkName:
+                            description: References to a Network CRD object. If namespace
+                              is not specified, VMI namespace is assumed.
+                            type: string
+                        required:
+                        - networkName
+                        type: object
                       multus:
                         description: Represents the multus cni network.
                         properties:
@@ -7950,6 +7964,20 @@ var CRDsValidation map[string]string = map[string]string{
             description: Network represents a network type and a resource that should
               be connected to the vm.
             properties:
+              kactus:
+                description: Represents the kactus cni network.
+                properties:
+                  default:
+                    description: Select the default network and add it to the network
+                      annotation.
+                    type: boolean
+                  networkName:
+                    description: References to a Network CRD object. If namespace
+                      is not specified, VMI namespace is assumed.
+                    type: string
+                required:
+                - networkName
+                type: object
               multus:
                 description: Represents the multus cni network.
                 properties:
@@ -11901,6 +11929,20 @@ var CRDsValidation map[string]string = map[string]string{
                     description: Network represents a network type and a resource
                       that should be connected to the vm.
                     properties:
+                      kactus:
+                        description: Represents the kactus cni network.
+                        properties:
+                          default:
+                            description: Select the default network and add it to
+                              the network annotation.
+                            type: boolean
+                          networkName:
+                            description: References to a Network CRD object. If namespace
+                              is not specified, VMI namespace is assumed.
+                            type: string
+                        required:
+                        - networkName
+                        type: object
                       multus:
                         description: Represents the multus cni network.
                         properties:
@@ -15212,6 +15254,21 @@ var CRDsValidation map[string]string = map[string]string{
                             description: Network represents a network type and a resource
                               that should be connected to the vm.
                             properties:
+                              kactus:
+                                description: Represents the kactus cni network.
+                                properties:
+                                  default:
+                                    description: Select the default network and add
+                                      it to the network annotation.
+                                    type: boolean
+                                  networkName:
+                                    description: References to a Network CRD object.
+                                      If namespace is not specified, VMI namespace
+                                      is assumed.
+                                    type: string
+                                required:
+                                - networkName
+                                type: object
                               multus:
                                 description: Represents the multus cni network.
                                 properties:
@@ -18858,6 +18915,21 @@ var CRDsValidation map[string]string = map[string]string{
                                 description: Network represents a network type and
                                   a resource that should be connected to the vm.
                                 properties:
+                                  kactus:
+                                    description: Represents the kactus cni network.
+                                    properties:
+                                      default:
+                                        description: Select the default network and
+                                          add it to the network annotation.
+                                        type: boolean
+                                      networkName:
+                                        description: References to a Network CRD object.
+                                          If namespace is not specified, VMI namespace
+                                          is assumed.
+                                        type: string
+                                    required:
+                                    - networkName
+                                    type: object
                                   multus:
                                     description: Represents the multus cni network.
                                     properties:
