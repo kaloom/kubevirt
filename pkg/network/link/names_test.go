@@ -40,10 +40,10 @@ var _ = Describe("Common Methods", func() {
 	})
 	Context("GenerateNewBridgedVmiInterfaceName function", func() {
 		It("Should return the new bridge interface name", func() {
-			Expect(virtnetlink.GenerateNewBridgedVmiInterfaceName("eth0")).To(Equal("eth0-nic"))
+			Expect(virtnetlink.GenerateNewBridgedVmiInterfaceName("eth0")).To(Equal("nic0"))
 		})
 		It("Should return another new bridge interface name", func() {
-			Expect(virtnetlink.GenerateNewBridgedVmiInterfaceName("net12")).To(Equal("net12-nic"))
+			Expect(virtnetlink.GenerateNewBridgedVmiInterfaceName("net12")).To(Equal("nic12"))
 		})
 	})
 })

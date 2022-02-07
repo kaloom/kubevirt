@@ -19,15 +19,11 @@
 
 package link
 
-import (
-	"fmt"
-)
-
 func GenerateTapDeviceName(podInterfaceName string) string {
 	return "tap" + podInterfaceName[3:]
 }
 
 func GenerateNewBridgedVmiInterfaceName(originalPodInterfaceName string) string {
-	return fmt.Sprintf("%s-nic", originalPodInterfaceName)
+	return "nic" + originalPodInterfaceName[3:]
 
 }

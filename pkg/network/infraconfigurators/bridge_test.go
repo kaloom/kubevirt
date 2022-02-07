@@ -924,5 +924,5 @@ func withErrorMovingPodIPAddressToDummy(oldLink netlink.Link, newLink netlink.Li
 }
 
 func generateDummyIfaceName(ifaceName string) string {
-	return ifaceName + "-nic"
+	return "nic" + ifaceName[3:]
 }
