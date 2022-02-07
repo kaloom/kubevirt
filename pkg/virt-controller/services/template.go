@@ -76,6 +76,7 @@ const logVerbosity = "logVerbosity"
 const virtiofsDebugLogs = "virtiofsdDebugLogs"
 
 const MultusNetworksAnnotation = "k8s.v1.cni.cncf.io/networks"
+const KactusNetworksAnnotation = "networks"
 
 const qemuTimeoutJitterRange = 120
 
@@ -2033,10 +2034,18 @@ func getNamespaceAndNetworkName(vmi *v1.VirtualMachineInstance, fullNetworkName 
 }
 
 func getNetworkToResourceMap(virtClient kubecli.KubevirtClient, vmi *v1.VirtualMachineInstance) (networkToResourceMap map[string]string, err error) {
+	var namespace, networkName string
 	networkToResourceMap = make(map[string]string)
 	for _, network := range vmi.Spec.Networks {
+		metaPluginNetwork := false
 		if network.Multus != nil {
-			namespace, networkName := getNamespaceAndNetworkName(vmi, network.Multus.NetworkName)
+			namespace, networkName = getNamespaceAndNetworkName(vmi, network.Multus.NetworkName)
+			metaPluginNetwork = true
+		} else if network.Kactus != nil {
+			namespace, networkName = getNamespaceAndNetworkName(vmi, network.Kactus.NetworkName)
+			metaPluginNetwork = true
+		}
+		if metaPluginNetwork {
 			crd, err := virtClient.NetworkClient().K8sCniCncfIoV1().NetworkAttachmentDefinitions(namespace).Get(context.Background(), networkName, metav1.GetOptions{})
 			if err != nil {
 				return map[string]string{}, fmt.Errorf("Failed to locate network attachment definition %s/%s", namespace, networkName)
@@ -2176,6 +2185,14 @@ func generatePodAnnotations(vmi *v1.VirtualMachineInstance) (map[string]string, 
 
 	if multusDefaultNetwork := lookupMultusDefaultNetworkName(vmi.Spec.Networks); multusDefaultNetwork != "" {
 		annotationsSet[MULTUS_DEFAULT_NETWORK_CNI_ANNOTATION] = multusDefaultNetwork
+	}
+
+	kactusAnnotation, err := generateKactusCNIAnnotation(vmi)
+	if err != nil {
+		return nil, err
+	}
+	if kactusAnnotation != "" {
+		annotationsSet[KactusNetworksAnnotation] = kactusAnnotation
 	}
 
 	if HaveMasqueradeInterface(vmi.Spec.Domain.Devices.Interfaces) {
