@@ -798,3 +798,11 @@ func (MultusNetwork) SwaggerDoc() map[string]string {
 		"default":     "Select the default network and add it to the\nmultus-cni.io/default-network annotation.",
 	}
 }
+
+func (KactusNetwork) SwaggerDoc() map[string]string {
+	return map[string]string{
+		"":            "Represents the kactus cni network.",
+		"networkName": "References to a Network CRD object. If namespace is not\nspecified, VMI namespace is assumed.",
+		"default":     "Select the default network and add it to the\nnetwork annotation.",
+	}
+}

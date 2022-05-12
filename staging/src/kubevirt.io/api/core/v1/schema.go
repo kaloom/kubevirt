@@ -1352,6 +1352,7 @@ type Network struct {
 type NetworkSource struct {
 	Pod    *PodNetwork    `json:"pod,omitempty"`
 	Multus *MultusNetwork `json:"multus,omitempty"`
+	Kactus *KactusNetwork `json:"kactus,omitempty"`
 }
 
 // Represents the stock pod network interface.
@@ -1394,5 +1395,16 @@ type MultusNetwork struct {
 
 	// Select the default network and add it to the
 	// multus-cni.io/default-network annotation.
+	Default bool `json:"default,omitempty"`
+}
+
+// Represents the kactus cni network.
+type KactusNetwork struct {
+	// References to a Network CRD object. If namespace is not
+	// specified, VMI namespace is assumed.
+	NetworkName string `json:"networkName"`
+
+	// Select the default network and add it to the
+	// network annotation.
 	Default bool `json:"default,omitempty"`
 }

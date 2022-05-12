@@ -13686,6 +13686,23 @@
      }
     }
    },
+   "v1.KactusNetwork": {
+    "description": "Represents the kactus cni network.",
+    "type": "object",
+    "required": [
+     "networkName"
+    ],
+    "properties": {
+     "default": {
+      "description": "Select the default network and add it to the network annotation.",
+      "type": "boolean"
+     },
+     "networkName": {
+      "description": "References to a Network CRD object. If namespace is not specified, VMI namespace is assumed.",
+      "type": "string"
+     }
+    }
+   },
    "v1.KernelBoot": {
     "description": "Represents the firmware blob used to assist in the kernel boot process. Used for setting the kernel, initrd and command line arguments",
     "type": "object",
@@ -14307,6 +14324,9 @@
      "name"
     ],
     "properties": {
+     "kactus": {
+      "$ref": "#/definitions/v1.KactusNetwork"
+     },
      "multus": {
       "$ref": "#/definitions/v1.MultusNetwork"
      },
