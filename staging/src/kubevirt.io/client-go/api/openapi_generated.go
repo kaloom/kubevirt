@@ -375,6 +375,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubevirt.io/api/core/v1.InterfaceSRIOV":                                                     schema_kubevirtio_api_core_v1_InterfaceSRIOV(ref),
 		"kubevirt.io/api/core/v1.InterfaceSlirp":                                                     schema_kubevirtio_api_core_v1_InterfaceSlirp(ref),
 		"kubevirt.io/api/core/v1.KVMTimer":                                                           schema_kubevirtio_api_core_v1_KVMTimer(ref),
+		"kubevirt.io/api/core/v1.KactusNetwork":                                                      schema_kubevirtio_api_core_v1_KactusNetwork(ref),
 		"kubevirt.io/api/core/v1.KernelBoot":                                                         schema_kubevirtio_api_core_v1_KernelBoot(ref),
 		"kubevirt.io/api/core/v1.KernelBootContainer":                                                schema_kubevirtio_api_core_v1_KernelBootContainer(ref),
 		"kubevirt.io/api/core/v1.KubeVirt":                                                           schema_kubevirtio_api_core_v1_KubeVirt(ref),
@@ -16930,6 +16931,34 @@ func schema_kubevirtio_api_core_v1_KVMTimer(ref common.ReferenceCallback) common
 	}
 }
 
+func schema_kubevirtio_api_core_v1_KactusNetwork(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Represents the kactus cni network.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"networkName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "References to a Network CRD object. If namespace is not specified, VMI namespace is assumed.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"default": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Select the default network and add it to the network annotation.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"networkName"},
+			},
+		},
+	}
+}
+
 func schema_kubevirtio_api_core_v1_KernelBoot(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -18106,12 +18135,17 @@ func schema_kubevirtio_api_core_v1_Network(ref common.ReferenceCallback) common.
 							Ref: ref("kubevirt.io/api/core/v1.MultusNetwork"),
 						},
 					},
+					"kactus": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubevirt.io/api/core/v1.KactusNetwork"),
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
 		},
 		Dependencies: []string{
-			"kubevirt.io/api/core/v1.MultusNetwork", "kubevirt.io/api/core/v1.PodNetwork"},
+			"kubevirt.io/api/core/v1.KactusNetwork", "kubevirt.io/api/core/v1.MultusNetwork", "kubevirt.io/api/core/v1.PodNetwork"},
 	}
 }
 
@@ -18163,11 +18197,16 @@ func schema_kubevirtio_api_core_v1_NetworkSource(ref common.ReferenceCallback) c
 							Ref: ref("kubevirt.io/api/core/v1.MultusNetwork"),
 						},
 					},
+					"kactus": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubevirt.io/api/core/v1.KactusNetwork"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kubevirt.io/api/core/v1.MultusNetwork", "kubevirt.io/api/core/v1.PodNetwork"},
+			"kubevirt.io/api/core/v1.KactusNetwork", "kubevirt.io/api/core/v1.MultusNetwork", "kubevirt.io/api/core/v1.PodNetwork"},
 	}
 }
 
