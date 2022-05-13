@@ -161,14 +161,14 @@ func ValidateVirtualMachineInstanceSpec(field *k8sfield.Path, spec *v1.VirtualMa
 
 	bootOrderMap, newCauses := validateBootOrder(field, spec, volumeNameMap)
 	causes = append(causes, newCauses...)
-	podExists, multusDefaultCount, newCauses := validateNetworks(field, spec, networkNameMap)
+	podExists, defaultCount, newCauses := validateNetworks(field, spec, networkNameMap)
 	causes = append(causes, newCauses...)
 
-	if multusDefaultCount > 1 {
-		causes = appendStatusCaseForMoreThanOneMultusDefaultNetwork(field, causes)
+	if defaultCount > 1 {
+		causes = appendStatusCaseForMoreThanOneMetaCNIPluginsDefaultNetwork(field, causes)
 	}
-	if podExists && multusDefaultCount > 0 {
-		causes = appendStatusCauseForPodNetworkDefinedWithMultusDefaultNetworkDefined(field, causes)
+	if podExists && defaultCount > 0 {
+		causes = appendStatusCauseForPodNetworkDefinedWithMetaCNIPluginsDefaultNetworkDefined(field, causes)
 	}
 
 	networkInterfaceMap, vifMQ, isMultiQueueAllowed, newCauses, done := validateNetworksMatchInterfaces(field, spec, config, networkNameMap, bootOrderMap)
@@ -252,6 +252,10 @@ func validateNetworksMatchInterfaces(field *k8sfield.Path, spec *v1.VirtualMachi
 	return networkInterfaceMap, vifMQ, isMultiQueueAllowed, causes, done
 }
 
+func networkSourceIsForMetaCNIPlugins(network *v1.Network) bool {
+	return network.NetworkSource.Multus != nil || network.NetworkSource.Kactus != nil
+}
+
 func validateInterfaceNetworkBasics(field *k8sfield.Path, networkExists bool, idx int, iface v1.Interface, networkData *v1.Network, config *virtconfig.ClusterConfig) (causes []metav1.StatusCause) {
 	if !networkExists {
 		causes = appendStatusCauseForNetworkNotFound(field, causes, idx, iface)
@@ -267,8 +271,8 @@ func validateInterfaceNetworkBasics(field *k8sfield.Path, networkExists bool, id
 		causes = appendStatusCauseForBridgeNotEnabled(field, causes, idx)
 	} else if iface.InterfaceBindingMethod.Macvtap != nil && !config.MacvtapEnabled() {
 		causes = appendStatusCauseForMacvtapFeatureGateNotEnabled(field, causes, idx)
-	} else if iface.InterfaceBindingMethod.Macvtap != nil && networkData.NetworkSource.Multus == nil {
-		causes = appendStatusCauseForMacvtapOnlyAllowedWithMultus(field, causes, idx)
+	} else if iface.InterfaceBindingMethod.Macvtap != nil && !networkSourceIsForMetaCNIPlugins(networkData) {
+		causes = appendStatusCauseForMacvtapOnlyAllowedWithMetaCNIPlugins(field, causes, idx)
 	}
 	return causes
 }
@@ -471,10 +475,10 @@ func validateForwardPortNonZero(field *k8sfield.Path, forwardPort v1.Port, idx i
 	return causes
 }
 
-func appendStatusCauseForMacvtapOnlyAllowedWithMultus(field *k8sfield.Path, causes []metav1.StatusCause, idx int) []metav1.StatusCause {
+func appendStatusCauseForMacvtapOnlyAllowedWithMetaCNIPlugins(field *k8sfield.Path, causes []metav1.StatusCause, idx int) []metav1.StatusCause {
 	causes = append(causes, metav1.StatusCause{
 		Type:    metav1.CauseTypeFieldValueInvalid,
-		Message: "Macvtap interface only implemented with Multus network",
+		Message: "Macvtap interface only implemented with Multus or Kactus network",
 		Field:   field.Child("domain", "devices", "interfaces").Index(idx).Child("name").String(),
 	})
 	return causes
@@ -832,26 +836,26 @@ func validateLaunchSecurity(field *k8sfield.Path, spec *v1.VirtualMachineInstanc
 	return causes
 }
 
-func appendStatusCauseForPodNetworkDefinedWithMultusDefaultNetworkDefined(field *k8sfield.Path, causes []metav1.StatusCause) []metav1.StatusCause {
+func appendStatusCauseForPodNetworkDefinedWithMetaCNIPluginsDefaultNetworkDefined(field *k8sfield.Path, causes []metav1.StatusCause) []metav1.StatusCause {
 	return append(causes, metav1.StatusCause{
 		Type:    metav1.CauseTypeFieldValueInvalid,
-		Message: "Pod network cannot be defined when Multus default network is defined",
+		Message: "Pod network cannot be defined when Multus or Kactus default network is defined",
 		Field:   field.Child("networks").String(),
 	})
 }
 
-func appendStatusCaseForMoreThanOneMultusDefaultNetwork(field *k8sfield.Path, causes []metav1.StatusCause) []metav1.StatusCause {
+func appendStatusCaseForMoreThanOneMetaCNIPluginsDefaultNetwork(field *k8sfield.Path, causes []metav1.StatusCause) []metav1.StatusCause {
 	return append(causes, metav1.StatusCause{
 		Type:    metav1.CauseTypeFieldValueInvalid,
-		Message: "Multus CNI should only have one default network",
+		Message: "Multus or Kactus CNI should only have one default network",
 		Field:   field.Child("networks").String(),
 	})
 }
 
-func validateNetworks(field *k8sfield.Path, spec *v1.VirtualMachineInstanceSpec, networkNameMap map[string]*v1.Network) (podExists bool, multusDefaultCount int, causes []metav1.StatusCause) {
+func validateNetworks(field *k8sfield.Path, spec *v1.VirtualMachineInstanceSpec, networkNameMap map[string]*v1.Network) (podExists bool, defaultCount int, causes []metav1.StatusCause) {
 
 	podExists = false
-	multusDefaultCount = 0
+	defaultCount = 0 // there can be only one default network whether it's multus or kactus
 
 	for idx, network := range spec.Networks {
 
@@ -868,7 +872,13 @@ func validateNetworks(field *k8sfield.Path, spec *v1.VirtualMachineInstanceSpec,
 			cniTypesCount++
 			networkNameExistsOrNotNeeded = network.Multus.NetworkName != ""
 			if network.NetworkSource.Multus.Default {
-				multusDefaultCount++
+				defaultCount++
+			}
+		} else if network.NetworkSource.Kactus != nil {
+			cniTypesCount++
+			networkNameExistsOrNotNeeded = network.Kactus.NetworkName != ""
+			if network.NetworkSource.Kactus.Default {
+				defaultCount++
 			}
 		}
 
@@ -880,7 +890,7 @@ func validateNetworks(field *k8sfield.Path, spec *v1.VirtualMachineInstanceSpec,
 
 		networkNameMap[spec.Networks[idx].Name] = &spec.Networks[idx]
 	}
-	return podExists, multusDefaultCount, causes
+	return podExists, defaultCount, causes
 }
 
 func appendStatusCauseForCNIPluginHasNoNetworkName(field *k8sfield.Path, incomingCauses []metav1.StatusCause, idx int) (causes []metav1.StatusCause) {

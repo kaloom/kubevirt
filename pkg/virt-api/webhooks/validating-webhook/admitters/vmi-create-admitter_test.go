@@ -1346,7 +1346,7 @@ var _ = Describe("Validating VMICreate Admitter", func() {
 			Expect(causes).To(HaveLen(1))
 			Expect(string(causes[0].Type)).To(Equal("FieldValueInvalid"))
 			Expect(causes[0].Field).To(Equal("fake.networks"))
-			Expect(causes[0].Message).To(Equal("Multus CNI should only have one default network"))
+			Expect(causes[0].Message).To(Equal("Multus or Kactus CNI should only have one default network"))
 		})
 		It("should reject pod network with a multus default", func() {
 			vm := api.NewMinimalVMI("testvm")
@@ -1374,7 +1374,7 @@ var _ = Describe("Validating VMICreate Admitter", func() {
 			Expect(causes).To(HaveLen(1))
 			Expect(string(causes[0].Type)).To(Equal("FieldValueInvalid"))
 			Expect(causes[0].Field).To(Equal("fake.networks"))
-			Expect(causes[0].Message).To(Equal("Pod network cannot be defined when Multus default network is defined"))
+			Expect(causes[0].Message).To(Equal("Pod network cannot be defined when Multus or Kactus default network is defined"))
 		})
 		It("should reject multus network source without networkName", func() {
 			vm := api.NewMinimalVMI("testvm")
@@ -1610,7 +1610,7 @@ var _ = Describe("Validating VMICreate Admitter", func() {
 			causes := ValidateVirtualMachineInstanceSpec(k8sfield.NewPath("fake"), &vm.Spec, config)
 			Expect(causes).To(HaveLen(1))
 			Expect(causes[0].Field).To(Equal("fake.domain.devices.interfaces[0].name"))
-			Expect(causes[0].Message).To(Equal("Macvtap interface only implemented with Multus network"))
+			Expect(causes[0].Message).To(Equal("Macvtap interface only implemented with Multus or Kactus network"))
 		})
 		It("should reject a macvtap interface on a multus network when the feature is inactive", func() {
 			vm := api.NewMinimalVMI("testvm")
