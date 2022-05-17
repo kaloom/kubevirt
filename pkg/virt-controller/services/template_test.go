@@ -1045,6 +1045,80 @@ var _ = Describe("Template", func() {
 				Expect(value).To(Equal("k6t-eth0"))
 			})
 		})
+		/*
+			Context("with kactus annotation", func() {
+				It("should add kactus networks in the pod annotation", func() {
+					config, kvInformer, svc = configFactory(defaultArch)
+					vmi := v1.VirtualMachineInstance{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "testvmi",
+							Namespace: "default",
+							UID:       "1234",
+						},
+						Spec: v1.VirtualMachineInstanceSpec{
+							Domain: v1.DomainSpec{
+								Devices: v1.Devices{
+									DisableHotplug: true,
+								},
+							},
+							Networks: []v1.Network{
+								{Name: "default",
+									NetworkSource: v1.NetworkSource{
+										Kactus: &v1.KactusNetwork{NetworkName: "default"},
+									}},
+								{Name: "test1",
+									NetworkSource: v1.NetworkSource{
+										Kactus: &v1.KactusNetwork{NetworkName: "test1"},
+									}},
+							},
+						},
+					}
+
+					pod, err := svc.RenderLaunchManifest(&vmi)
+					Expect(err).ToNot(HaveOccurred())
+					value, ok := pod.Annotations["networks"]
+					Expect(ok).To(BeTrue())
+					expectedIfaces := ("[" +
+						"{\"name\":\"default\",\"namespace\":\"default\"}," +
+						"{\"name\":\"test1\",\"namespace\":\"default\"}" +
+						"]")
+					Expect(value).To(Equal(expectedIfaces))
+				})
+				It("should add default kactus networks in the kactus default-network annotation", func() {
+					config, kvInformer, svc = configFactory(defaultArch)
+					vmi := v1.VirtualMachineInstance{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "testvmi",
+							Namespace: "default",
+							UID:       "1234",
+						},
+						Spec: v1.VirtualMachineInstanceSpec{
+							Domain: v1.DomainSpec{
+								Devices: v1.Devices{
+									DisableHotplug: true,
+								},
+							},
+							Networks: []v1.Network{
+								{Name: "default",
+									NetworkSource: v1.NetworkSource{
+										Kactus: &v1.KactusNetwork{NetworkName: "default", Default: true},
+									}},
+								{Name: "test1",
+									NetworkSource: v1.NetworkSource{
+										Kactus: &v1.KactusNetwork{NetworkName: "test1"},
+									}},
+							},
+						},
+					}
+
+					pod, err := svc.RenderLaunchManifest(&vmi)
+					Expect(err).ToNot(HaveOccurred())
+					value, ok := pod.Annotations["networks"]
+					Expect(ok).To(BeTrue())
+					Expect(value).To(Equal("[{\"name\":\"default\",\"isPrimary\":true,\"namespace\":\"default\"},{\"name\":\"test1\",\"namespace\":\"default\"}]"))
+				})
+			})
+		*/
 		Context("With Istio sidecar.istio.io/inject annotation", func() {
 			var (
 				vmi v1.VirtualMachineInstance

@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "kactus_annotations.go",
         "multus_annotations.go",
         "template.go",
     ],
@@ -39,6 +40,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
+        "kactus_annotations_test.go",
         "multus_annotations_test.go",
         "services_suite_test.go",
         "template_test.go",
