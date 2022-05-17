@@ -21,6 +21,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"path/filepath"
@@ -78,6 +79,10 @@ const logVerbosity = "logVerbosity"
 const virtiofsDebugLogs = "virtiofsdDebugLogs"
 
 const MultusNetworksAnnotation = "k8s.v1.cni.cncf.io/networks"
+const KactusNetworksAnnotation = "networks"
+
+const kactusNetworkAttachmentDefinition = "networks"
+const kactusCRDGroupName = "kaloom.com"
 
 const qemuTimeoutJitterRange = 120
 
@@ -2047,13 +2052,26 @@ func getNamespaceAndNetworkName(vmi *v1.VirtualMachineInstance, fullNetworkName 
 }
 
 func getNetworkToResourceMap(virtClient kubecli.KubevirtClient, vmi *v1.VirtualMachineInstance) (networkToResourceMap map[string]string, err error) {
+	var namespace, networkName string
 	networkToResourceMap = make(map[string]string)
 	for _, network := range vmi.Spec.Networks {
 		if network.Multus != nil {
-			namespace, networkName := getNamespaceAndNetworkName(vmi, network.Multus.NetworkName)
+			namespace, networkName = getNamespaceAndNetworkName(vmi, network.Multus.NetworkName)
 			crd, err := virtClient.NetworkClient().K8sCniCncfIoV1().NetworkAttachmentDefinitions(namespace).Get(context.Background(), networkName, metav1.GetOptions{})
 			if err != nil {
 				return map[string]string{}, fmt.Errorf("Failed to locate network attachment definition %s/%s", namespace, networkName)
+			}
+			networkToResourceMap[network.Name] = getResourceNameForNetwork(crd)
+		} else if network.Kactus != nil {
+			namespace, networkName := getNamespaceAndNetworkName(vmi, network.Kactus.NetworkName)
+			resourcePath := fmt.Sprintf("/apis/%s/v1/namespaces/%s/%s/%s", kactusCRDGroupName, namespace, kactusNetworkAttachmentDefinition, networkName)
+			crdData, err := virtClient.RestClient().Get().AbsPath(resourcePath).DoRaw(context.Background())
+			if err != nil {
+				return map[string]string{}, fmt.Errorf("Failed to locate kactus network attachment definition %s/%s: %v", namespace, networkName, err)
+			}
+			crd := &networkv1.NetworkAttachmentDefinition{}
+			if err := json.Unmarshal(crdData, crd); err != nil {
+				return map[string]string{}, fmt.Errorf("Failed to parse kactus network attachment definition %s/%s: %v", namespace, networkName, err)
 			}
 			networkToResourceMap[network.Name] = getResourceNameForNetwork(crd)
 		}
@@ -2192,6 +2210,14 @@ func generatePodAnnotations(vmi *v1.VirtualMachineInstance) (map[string]string, 
 
 	if multusDefaultNetwork := lookupMultusDefaultNetworkName(vmi.Spec.Networks); multusDefaultNetwork != "" {
 		annotationsSet[MULTUS_DEFAULT_NETWORK_CNI_ANNOTATION] = multusDefaultNetwork
+	}
+
+	kactusAnnotation, err := generateKactusCNIAnnotation(vmi)
+	if err != nil {
+		return nil, err
+	}
+	if kactusAnnotation != "" {
+		annotationsSet[KactusNetworksAnnotation] = kactusAnnotation
 	}
 
 	if HaveMasqueradeInterface(vmi.Spec.Domain.Devices.Interfaces) {
