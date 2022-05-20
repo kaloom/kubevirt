@@ -20,7 +20,9 @@
 package network
 
 import (
+	"crypto/md5"
 	"fmt"
+	"io"
 	"os"
 
 	"kubevirt.io/kubevirt/pkg/network/domainspec"
@@ -94,7 +96,7 @@ func newPhase2PodNIC(vmi *v1.VirtualMachineInstance, network *v1.Network, handle
 }
 
 func newPodNIC(vmi *v1.VirtualMachineInstance, network *v1.Network, handler netdriver.NetworkHandler, cacheCreator cacheCreator, launcherPID *int) (*podNIC, error) {
-	if network.Pod == nil && network.Multus == nil {
+	if network.Pod == nil && network.Multus == nil && network.Kactus == nil {
 		return nil, fmt.Errorf("Network not implemented")
 	}
 
@@ -358,16 +360,29 @@ func (l *podNIC) state() (cache.PodIfaceState, error) {
 }
 
 func generateInPodBridgeInterfaceName(podInterfaceName string) string {
-	return fmt.Sprintf("k6t-%s", podInterfaceName)
+	return "k6t" + podInterfaceName[3:]
+}
+
+func getNetworkIfname(networkName string) string {
+	h := md5.New()
+	io.WriteString(h, networkName)
+	nif := fmt.Sprintf("net%x", h.Sum(nil))
+	return nif[:15] // the Max on Linux (i.e. IFNAMSIZ)
 }
 
 func composePodInterfaceName(vmi *v1.VirtualMachineInstance, network *v1.Network) (string, error) {
 	if isSecondaryMultusNetwork(*network) {
 		multusIndex := findMultusIndex(vmi, network)
 		if multusIndex == -1 {
-			return "", fmt.Errorf("Network name %s not found", network.Name)
+			return "", fmt.Errorf("Multus Network name %s not found", network.Name)
 		}
 		return fmt.Sprintf("net%d", multusIndex), nil
+	}
+	if isSecondaryKactusNetwork(*network) {
+		if kactusIndex := findKactusIndex(vmi, network); kactusIndex == -1 {
+			return "", fmt.Errorf("Kactus Network name %s not found", network.Name)
+		}
+		return getNetworkIfname(network.Kactus.NetworkName), nil
 	}
 	return primaryPodInterfaceName, nil
 }
@@ -386,8 +401,25 @@ func findMultusIndex(vmi *v1.VirtualMachineInstance, networkToFind *v1.Network) 
 	return -1
 }
 
+func findKactusIndex(vmi *v1.VirtualMachineInstance, networkToFind *v1.Network) int {
+	idxKactus := 0
+	for _, network := range vmi.Spec.Networks {
+		if isSecondaryKactusNetwork(network) {
+			idxKactus++
+			if network.Name == networkToFind.Name {
+				return idxKactus
+			}
+		}
+	}
+	return -1
+}
+
 func isSecondaryMultusNetwork(net v1.Network) bool {
 	return net.Multus != nil && !net.Multus.Default
+}
+
+func isSecondaryKactusNetwork(net v1.Network) bool {
+	return net.Kactus != nil && !net.Kactus.Default
 }
 
 func getPIDString(pid *int) string {

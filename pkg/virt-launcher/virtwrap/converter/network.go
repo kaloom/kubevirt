@@ -109,8 +109,8 @@ func createDomainInterfaces(vmi *v1.VirtualMachineInstance, domain *api.Domain, 
 				return nil, err
 			}
 		} else if iface.Macvtap != nil {
-			if net.Multus == nil {
-				return nil, fmt.Errorf("macvtap interface %s requires Multus meta-cni", iface.Name)
+			if net.Multus == nil && net.Kactus == nil {
+				return nil, fmt.Errorf("macvtap interface %s requires Multus/Kactus meta-cni", iface.Name)
 			}
 
 			domainIface.Type = "ethernet"
@@ -156,9 +156,9 @@ func getInterfaceType(iface *v1.Interface) string {
 func validateNetworksTypes(networks []v1.Network) error {
 	for _, network := range networks {
 		switch {
-		case network.Pod != nil && network.Multus != nil:
+		case network.Pod != nil && (network.Multus != nil || network.Kactus != nil):
 			return fmt.Errorf("network %s must have only one network type", network.Name)
-		case network.Pod == nil && network.Multus == nil:
+		case network.Pod == nil && network.Multus == nil && network.Kactus == nil:
 			return fmt.Errorf("network %s must have a network type", network.Name)
 		}
 	}
