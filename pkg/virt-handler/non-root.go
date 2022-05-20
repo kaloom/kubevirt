@@ -116,7 +116,11 @@ func getTapDevices(vmi *v1.VirtualMachineInstance) []string {
 	for _, net := range vmi.Spec.Networks {
 		_, ok := macvtap[net.Name]
 		if ok {
-			tapDevices = append(tapDevices, net.Multus.NetworkName)
+			if net.Multus != nil {
+				tapDevices = append(tapDevices, net.Multus.NetworkName)
+			} else if net.Kactus != nil {
+				tapDevices = append(tapDevices, net.Kactus.NetworkName)
+			}
 		}
 	}
 	return tapDevices
