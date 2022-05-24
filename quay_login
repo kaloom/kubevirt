@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "${QUAY_REGISTRY_PASS}" | docker login -u "${QUAY_REGISTRY_USER}" --password-stdin quay.io

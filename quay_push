@@ -1,0 +1,7 @@
+#!/bin/bash
+export KUBEVIRT_CRI=docker
+export DOCKER_TAG=$(git describe --match='v[0-9]*' --tags)
+export DOCKER_PREFIX=quay.io/kkubevirt
+export IMAGE_PULL_POLICY=Always
+make push
+make manifests

@@ -1,0 +1,30 @@
+dist: xenial
+sudo: required
+services:
+  - docker
+before_install:
+- sudo add-apt-repository -y ppa:projectatomic/ppa
+- sudo apt-get update -qq
+- sudo apt-get install -qq -y software-properties-common rsync ssh xinetd
+
+env:
+  global:
+    - KUBEVIRT_CRI=docker
+    - DOCKER_TAG=$(git describe --match='v[0-9]*' --tags)
+    - DOCKER_PREFIX=quay.io/kkubevirt
+    - IMAGE_PULL_POLICY=Always
+    # The following variables are set as GitHub repository encrypted credentials
+    # QUAY_REGISTRY_USER=<user name of docker registry>
+    # QUAY_REGISTRY_PASS=<password of docker registry>
+
+
+script:
+  - bash quay_login
+  - make
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: bash quay_push
+  on:
+    branch: v0.49.0
